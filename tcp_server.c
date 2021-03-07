@@ -6,20 +6,41 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
 #define BUFF_SIZE 1024
+int socket_server;
+int socket_client_id;
+static void my_handler(int sig){ // can be called asynchronously
+ close(socket_server);
+ close(socket_client_id);
+ sleep(1);
+ exit(0);
+}
+
+void accept_thread(){
+
+
+
+}
 
 int main(int argc, char* argv[])
 {
+	signal(SIGINT, my_handler);
 	if(argc != 3) {
 		printf("Usage : ./h_c, ip, port\n");
 		return -1;
 	}
 	int local = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	 int val = 1;
+	 setsockopt(local,SOL_SOCKET,SO_REUSEADDR,(void *)&val,sizeof(int));
 	if(local < 0) {
 		perror("socket create");
 		return -1;
 	}
+
+	socket_server = local;
 
 	struct sockaddr_in serv_addr;
 	serv_addr.sin_family = AF_INET;
@@ -46,6 +67,8 @@ int main(int argc, char* argv[])
 			perror("accept error");
 			continue;
 		}
+		printf("new client connect\n");
+socket_client_id = new_fd;
 
 		while(1) {
 			char recv_buff[BUFF_SIZE] = {0};
@@ -55,19 +78,16 @@ int main(int argc, char* argv[])
 					printf("client shutdown\n");
 					break;
 				}
-				//尅呀被原谅的错误
 				else if(errno == EINTR || errno == EAGAIN) {
 					continue;
 				}
 				break;
 			}
-			printf("Clien say > %s\n", recv_buff);
+			printf("Clien say > %s(%d)\n", recv_buff,strlen(recv_buff));
 
 			char send_buff[BUFF_SIZE] = {0};
-			printf("Please Enter > ");
 			fflush(stdout);
-			scanf("%s", send_buff);
-			send(new_fd, send_buff, strlen(send_buff), 0);
+			send(new_fd, recv_buff, strlen(recv_buff)+1, 0);
 		}
 		close(new_fd);
 	}
