@@ -22,22 +22,8 @@ static void my_handler(int sig) { // can be called asynchronously
   exit(0);
 }
 
-void *accept_thread_handler(void *_null) {
-  while (1) {
-    struct sockaddr_in peer;
-    socklen_t len;
-    int new_fd = accept(socket_server, (struct sockaddr *)&peer, &len);
-    if (new_fd < 0) {
-      perror("accept error");
-      continue;
-    }
-    printf("new client connect\n");
-    socket_client_id = new_fd;
-    hasAcceptClient = true;
-  }
-  return NULL;
-}
 
+  pthread_t rec_thread;
 void *receive_thread_handler(void *_null) {
   while (1) {
 
@@ -65,6 +51,26 @@ void *receive_thread_handler(void *_null) {
     // char send_buff[BUFF_SIZE] = {0};
     // fflush(stdout);
     // send(new_fd, recv_buff, strlen(recv_buff) + 1, 0);
+  }
+  return NULL;
+}
+void *accept_thread_handler(void *_null) {
+  while (1) {
+    struct sockaddr_in peer;
+    socklen_t len;
+    int new_fd = accept(socket_server, (struct sockaddr *)&peer, &len);
+    if (new_fd < 0) {
+      perror("accept error");
+      continue;
+    }
+    printf("new client connect\n");
+    int old_client_id = socket_client_id;
+    socket_client_id = new_fd;
+    if (old_client_id != 0) {
+      close(old_client_id);
+    }
+    hasAcceptClient = true;
+  pthread_create(&rec_thread, NULL, receive_thread_handler, NULL);
   }
   return NULL;
 }
@@ -103,15 +109,16 @@ int main(int argc, char *argv[]) {
   }
 
   pthread_t accept_thread;
-  pthread_t rec_thread;
   pthread_create(&accept_thread, NULL, accept_thread_handler, NULL);
-  pthread_create(&rec_thread, NULL, receive_thread_handler, NULL);
 
   while (1) {
+#if 0
     int ret;
     scanf("%d", &ret);
     printf("input %d\n", ret);
+#endif
     const char *cmd;
+    int ret = 0;
     if (ret == 0) {
       cmd =
           "{\"cmd\":\"device_status_request\",\"sn\":\"123456\",\"packet_id\":"
@@ -132,7 +139,7 @@ int main(int argc, char *argv[]) {
 	if(hasAcceptClient){
 		 send(socket_client_id, cmd, strlen(cmd) + 1, 0);
 	}
-
+	sleep(3);
 
   }
   close(local);
