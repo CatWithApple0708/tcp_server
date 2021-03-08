@@ -18,7 +18,6 @@ bool hasAcceptClient = false;
 static void my_handler(int sig) { // can be called asynchronously
   close(socket_server);
   close(socket_client_id);
-  sleep(1);
   exit(0);
 }
 
@@ -112,16 +111,16 @@ int main(int argc, char *argv[]) {
   pthread_create(&accept_thread, NULL, accept_thread_handler, NULL);
 
   while (1) {
-#if 0
+#if 1
     int ret;
     scanf("%d", &ret);
     printf("input %d\n", ret);
 #endif
     const char *cmd;
-    int ret = 0;
+    //int ret = 0;
     if (ret == 0) {
       cmd =
-          "{\"cmd\":\"device_status_request\",\"sn\":\"123456\",\"packet_id\":"
+          "{\"cmd\":\"heart_packet\",\"sn\":\"123456\",\"packet_id\":"
           "\"packet_id_1\"}";
     } else if (ret == 1) {
       cmd = "{\"cmd\":\"lock_device\",\"sn\":\"123456\",\"packet_id\":"
